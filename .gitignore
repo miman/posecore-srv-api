@@ -14,7 +14,7 @@ node_modules/
 /dist
 /build
 /lib
-/src/generated
+/src
 
 # TypeScript cache files (used by tools like ts-node)
 .tsbuildinfo

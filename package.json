@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "generate": "npx @openapitools/openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o src/generated --additional-properties=supportsES6=true,modelPropertyNaming=camelCase,snapshot=false,withSeparateModelsAndApi=true,enumPropertyNaming=UPPERCASE",
+    "generate": "npx @openapitools/openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o src --additional-properties=supportsES6=true,modelPropertyNaming=camelCase,snapshot=false,withSeparateModelsAndApi=true,enumPropertyNaming=UPPERCASE",
     "build": "tsc --project tsconfig.json && npm run bundle",
     "bundle": "tsup src/index.ts --dts --format esm,cjs --out-dir dist",
     "full-build": "npm install && npm run generate && npm run build && npm pack"

@@ -2,7 +2,7 @@ name: Semantic Release
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   release:
@@ -16,16 +16,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Important for semantic-release to see all commits
+          fetch-depth: 0 # Important for semantic-release to see all commits
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate code from openapi spec
+        run: npm run generate
 
       - name: Build library
         run: npm run build
