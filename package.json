@@ -1,0 +1,33 @@
+{
+  "name": "posecore-srv-api",
+  "version": "1.0.0",
+  "description": "TypeScript client library generated from openapi.yaml for the PoseCore server",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "generate": "npx @openapitools/openapi-generator-cli generate -i openapi.yaml -g typescript-fetch -o src/generated --additional-properties=supportsES6=true,modelPropertyNaming=camelCase,snapshot=false,withSeparateModelsAndApi=true,enumPropertyNaming=UPPERCASE",
+    "build": "tsc --project tsconfig.json && npm run bundle",
+    "bundle": "tsup src/index.ts --dts --format esm,cjs --out-dir dist",
+    "full-build": "npm install && npm run generate && npm run build && npm pack"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "openapi",
+    "typescript",
+    "codegen",
+    "posecore"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.7.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.0",
+    "semantic-release": "^25.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

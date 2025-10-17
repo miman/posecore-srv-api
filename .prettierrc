@@ -1,0 +1,34 @@
+{
+  // **Basic Settings**
+  // Use single quotes instead of double quotes.
+  "singleQuote": false,
+
+  // Do not print semicolons at the end of statements.
+  "semi": true,
+
+  // **Indentation**
+  // Specify the number of spaces per indentation-level.
+  "tabWidth": 3,
+
+  // Use spaces instead of tabs for indentation.
+  "useTabs": false,
+
+  // **Line Length**
+  // Specify the line length that Prettier will wrap on.
+  "printWidth": 140,
+
+  // **Trailing Commas**
+  // Print trailing commas wherever valid in ES5 (objects, arrays, etc.).
+  "trailingComma": "es5",
+
+  // **Arrow Functions**
+  // Include parentheses around a sole arrow function parameter.
+  "arrowParens": "always",
+
+  // **HTML/JSX**
+  // Do not enforce self-closing for HTML/JSX tags.
+  "htmlWhitespaceSensitivity": "css",
+
+  // Put the > of a multi-line HTML (HTML, JSX, Vue, Angular) element on a new line.
+  "bracketSameLine": false
+}

@@ -1,0 +1,362 @@
+openapi: 3.0.3
+info:
+   title: Pose Tracking Communication API
+   version: 2.0.1
+   description: |
+      API for pose tracking clients to communicate pose events and connection status to a server using MQTT or WebSocket. Messages are sent as JSON payloads.
+
+components:
+   schemas:
+      Client:
+         type: object
+         description: Information about a client connected to the pose tracking server.
+         properties:
+            clientId:
+               type: string
+               description: The ID of the client sending the connection message
+            clientName:
+               type: string
+               description: The name of the client sending the connection message
+            clientType:
+               type: string
+               description: The type of client
+               enum: [POSE_TRACKER, POSE_APPLICATION]
+         required:
+            - clientId
+            - clientName
+            - clientType
+      ClientConnectedEvent:
+         type: object
+         description: An event sent by the server to inform about a client connection.
+         properties:
+            clientId:
+               type: string
+               description: The ID of the client sending the connection message
+            clientName:
+               type: string
+               description: The name of the client sending the connection message
+            clientType:
+               type: string
+               description: The type of client
+               enum: [POSE_TRACKER, POSE_APPLICATION]
+         required:
+            - clientId
+            - clientName
+            - clientType
+      ClientDisconnectedEvent:
+         type: object
+         description: An event sent by the server to inform about a client disconnection.
+         properties:
+            clientId:
+               type: string
+               description: The ID of the client application sending the disconnection message
+            clientType:
+               type: string
+               description: The type of client
+               enum: [POSE_TRACKER, POSE_APPLICATION]
+         required:
+            - clientId
+            - clientType
+      MsgHeader:
+         type: object
+         description: A header for messages sent by the pose tracking system, containing metadata about the message.
+         properties:
+            type:
+               type: string
+               description: The type of message being sent
+               enum: [WS_CLIENT_CONNECTED, POSE_SRV_INITILIZED, POSE_UPDATE]
+            version:
+               type: number
+               description: The version of the message format
+            sendTime:
+               type: integer
+               format: int64
+               description: The time the message was sent (in milliseconds since epoch in UTC)
+      Message:
+         type: object
+         description: A generic message structure for communication used by the pose tracking system.
+         properties:
+            header:
+               description: The message header containing metadata
+               $ref: "#/components/schemas/MsgHeader"
+            payload:
+               description: The message payload (PoseEvent, ConnectRequest, or other)
+      SrvFindResponse:
+         type: object
+         description: This message is returned for a broadcast request to find the pose server. Updated for WebRTC DataChannel discovery.
+         properties:
+            signalingUrl:
+               type: string
+               description: URL of the signaling endpoint used to negotiate WebRTC (e.g. wss://example.com/signal)
+            iceServers:
+               type: array
+               description: STUN/TURN servers to use for ICE candidate gathering
+               items:
+                  type: object
+                  properties:
+                     urls:
+                        type: array
+                        items:
+                           type: string
+                        description: Array of STUN/TURN server URLs (e.g. ["stun:stun.l.google.com:19302"]). Single URLs are returned as a single-item array.
+                     username:
+                        type: string
+                        nullable: true
+                        description: Optional username for TURN servers
+                     credential:
+                        type: string
+                        nullable: true
+                        description: Optional credential for TURN servers
+            dataChannelOptions:
+               type: object
+               description: Hints for clients when creating the DataChannel
+               properties:
+                  ordered:
+                     type: boolean
+                     description: Whether the data channel should be ordered
+                  maxRetransmits:
+                     type: integer
+                     nullable: true
+                     description: Maximum retransmits (if unordered)
+                  negotiated:
+                     type: boolean
+                     description: Whether channel is pre-negotiated
+                  id:
+                     type: integer
+                     nullable: true
+                     description: Optional pre-negotiated id when `negotiated` is true
+            trackerClientUrl:
+               type: string
+               description: The Web URL of the pose tracker client (UI to open in a browser)
+            srvVersion:
+               type: string
+               description: The version of the pose server that was found
+            srvTime:
+               type: string
+               description: The current time of the pose server (in ISO 8601 format)
+         required:
+            - srvVersion
+            - trackerClientUrl
+            - signalingUrl
+      SignalMessage:
+         type: object
+         description: A signaling message exchanged between clients for WebRTC negotiation (offer/answer/ice)
+         properties:
+            fromClientId:
+               type: string
+               nullable: true
+               description: The clientId of the sender (may be omitted for server-sent messages)
+            toClientId:
+               type: string
+               nullable: true
+               description: The clientId of the intended recipient
+            type:
+               type: string
+               description: The type of signaling message
+               enum: [offer, answer, ice]
+            payload:
+               type: object
+               nullable: true
+               description: The payload (SDP object for offer/answer or ICE candidate object)
+         required:
+            - type
+      SignalSendRequest:
+         type: object
+         description: Request to send a signaling message to another client (queued on server)
+         properties:
+            toClientId:
+               type: string
+               description: The clientId of the recipient (required)
+            fromClientId:
+               type: string
+               nullable: true
+               description: Optional sender clientId
+            type:
+               type: string
+               enum: [offer, answer, ice]
+               description: The type of signaling message
+            payload:
+               type: object
+               nullable: true
+               description: The payload to deliver (SDP or ICE)
+         required:
+            - toClientId
+            - type
+      SuccessResponse:
+         type: object
+         properties:
+            success:
+               type: boolean
+         required:
+            - success
+      AppSessionAction:
+         type: string
+         description: The action to perform for an application session
+         enum: [JOIN, LEAVE]
+      AppSessionRequest:
+         type: object
+         description: Request to join or leave a pose tracking session as an application client.
+         properties:
+            clientSessionId:
+               type: string
+               description: The session ID of the client application that wants to join/leave the pose tracking session
+            appClientId:
+               type: string
+               description: The ID of the client application to join/leave
+            action:
+               $ref: "#/components/schemas/AppSessionAction"
+         required:
+            - clientSessionId
+            - appClientId
+            - action
+      ClientType:
+         type: string
+         description: The type of client
+         enum: [POSE_TRACKER, POSE_APPLICATION]
+
+paths:
+   /clients:
+      get:
+         summary: Get all connected clients
+         description: Returns an array of all currently connected clients. Optionally filter by clientType.
+         parameters:
+            - in: query
+              name: clientType
+              schema:
+                 $ref: "#/components/schemas/ClientType"
+              required: false
+              description: If set, only clients of this type will be returned
+         responses:
+            "200":
+               description: List of connected clients
+               content:
+                  application/json:
+                     schema:
+                        type: array
+                        items:
+                           $ref: "#/components/schemas/Client"
+   /createSession:
+      post:
+         summary: Create a new session
+         description: Create a new session for a client. Returns a session id.
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     $ref: "#/components/schemas/Client"
+         responses:
+            "200":
+               description: Session created
+               content:
+                  application/json:
+                     schema:
+                        type: object
+                        properties:
+                           sessionId:
+                              type: string
+                              description: The ID of the session created for the client
+                        required:
+                           - sessionId
+   /removeSession:
+      post:
+         summary: Remove a session
+         description: Remove a session for a client by sessionId. Returns success status.
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     type: object
+                     properties:
+                        sessionId:
+                           type: string
+                           description: The ID of the session to remove
+                     required:
+                        - sessionId
+         responses:
+            "200":
+               description: Session removed
+               content:
+                  application/json:
+                     schema:
+                        type: object
+                        properties:
+                           success:
+                              type: boolean
+                              description: Whether the session was successfully removed
+                        required:
+                           - success
+   /getSrvInfo:
+      get:
+         summary: Get pose server info for discovery
+         description: Returns a SrvFindResponse with server URLs and version info for discovery/broadcast.
+         responses:
+            "200":
+               description: Server info for discovery
+               content:
+                  application/json:
+                     schema:
+                        $ref: "#/components/schemas/SrvFindResponse"
+   /handleAppSession:
+      post:
+         summary: Handle application session join/leave
+         description: Join or leave a pose tracking session as an application client.
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     $ref: "#/components/schemas/AppSessionRequest"
+         responses:
+            "200":
+               description: Action handled
+               content:
+                  application/json:
+                     schema:
+                        type: object
+                        properties:
+                           success:
+                              type: boolean
+                              description: Whether the action was successful
+                        required:
+                           - success
+
+   /signal/send:
+      post:
+         summary: Send a signaling message to another client
+         description: Queue a signaling message (offer/answer/ice) for delivery to a client. The server stores the message until the recipient polls via /signal/poll.
+         requestBody:
+            required: true
+            content:
+               application/json:
+                  schema:
+                     $ref: "#/components/schemas/SignalSendRequest"
+         responses:
+            "200":
+               description: Message queued
+               content:
+                  application/json:
+                     schema:
+                        $ref: "#/components/schemas/SuccessResponse"
+
+   /signal/poll:
+      get:
+         summary: Poll for queued signaling messages
+         description: Retrieves any queued signaling messages addressed to the provided clientId and clears them from the queue.
+         parameters:
+            - in: query
+              name: clientId
+              required: true
+              schema:
+                 type: string
+              description: The clientId for which queued signals should be returned
+         responses:
+            "200":
+               description: Array of signaling messages
+               content:
+                  application/json:
+                     schema:
+                        type: array
+                        items:
+                           $ref: "#/components/schemas/SignalMessage"
