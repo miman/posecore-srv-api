@@ -2,6 +2,12 @@
 
 This project contains TypeScript code generated from the OpenAPI specification in `openapi.yaml`.
 
+## Usage
+
+Isntall this library using
+
+`npm i --save github:miman/posecore-srv-api`
+
 ## Semantic release
 
 Commit message prefix Version bump
